@@ -57,25 +57,21 @@ st.write("## Age-specific cancer mortality rates")
 ### P2.1 ###
 min_year = int(df["Year"].min())
 max_year = int(df["Year"].max())
-year = st.slider("Select Year", min_year, max_year, min_year)
-year = 2012
-subset = df[df["Year"] == year]
-# st.write(subset)
+year = st.slider("Select Year", min_year, max_year, min_year, year = 2012)
 
+subset = df[df["Year"] == year]
 ### P2.1 ###
 
 
 ### P2.2 ###
 
 sex = st.radio("Select Sex", ('M', 'F'))
-
 subset = subset[subset["Sex"] == sex]
 # st.write(subset)
 ### P2.2 ###
 
 
 ### P2.3 ###
-
 all_countries = subset["Country"].unique()
 
 countries = st.multiselect(
@@ -98,8 +94,6 @@ subset = subset[subset["Country"].isin(countries)]
 
 
 ### P2.4 ###
-# replace with st.selectbox
-
 cancer_types = subset["Cancer"].unique()
 cancer = st.selectbox('Select Cancer Type', options = cancer_types)
 
