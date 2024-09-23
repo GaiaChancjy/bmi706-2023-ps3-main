@@ -50,45 +50,59 @@ def load_data():
 
 # Uncomment the next line when finished
 df = load_data()
-
 ### P1.2 ###
-
 
 st.write("## Age-specific cancer mortality rates")
 
 ### P2.1 ###
-# replace with st.slider
+min_year = int(df["Year"].min())
+max_year = int(df["Year"].max())
+year = st.slider("Select Year", min_year, max_year, min_year)
 year = 2012
 subset = df[df["Year"] == year]
+# st.write(subset)
+
 ### P2.1 ###
 
 
 ### P2.2 ###
-# replace with st.radio
-sex = "M"
+
+sex = st.radio("Select Sex", ('M', 'F'))
+
 subset = subset[subset["Sex"] == sex]
+# st.write(subset)
 ### P2.2 ###
 
 
 ### P2.3 ###
-# replace with st.multiselect
-# (hint: can use current hard-coded values below as as `default` for selector)
-countries = [
-    "Austria",
-    "Germany",
-    "Iceland",
-    "Spain",
-    "Sweden",
-    "Thailand",
-    "Turkey",
-]
+
+all_countries = subset["Country"].unique()
+
+countries = st.multiselect(
+    "Select countries to compare",
+    options=all_countries,
+    default=[
+        "Austria",
+        "Germany",
+        "Iceland",
+        "Spain",
+        "Sweden",
+        "Thailand",
+        "Turkey",
+    ]
+)
+
 subset = subset[subset["Country"].isin(countries)]
+
 ### P2.3 ###
 
 
 ### P2.4 ###
 # replace with st.selectbox
-cancer = "Malignant neoplasm of stomach"
+
+cancer_types = subset["Cancer"].unique()
+cancer = st.selectbox('Select Cancer Type', options = cancer_types)
+
 subset = subset[subset["Cancer"] == cancer]
 ### P2.4 ###
 
@@ -105,6 +119,29 @@ ages = [
     "Age >64",
 ]
 
+# Heatmap for cancer mortality rates
+heatmap = alt.Chart(subset).mark_rect().encode(
+    x=alt.X("Age", sort=ages),
+    y=alt.Y("Country"),
+    color=alt.Color("Rate", scale=alt.Scale(type="log", domain=[0.01, 1000], clamp=True), title="Mortality rate per 100k"),
+    tooltip=["Rate"]
+).properties(
+    title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}"
+)
+st.altair_chart(heatmap, use_container_width=True)
+
+
+# Bar chart for population
+bar_chart = alt.Chart(subset).mark_bar().encode(
+    x=alt.X("Pop", title="Population"),
+    y=alt.Y("Country", sort='-x'),
+    tooltip=["Pop"]
+).properties(
+    title=f"Population distribution in {year}"
+)
+st.altair_chart(bar_chart, use_container_width=True)
+
+# the original sample chart
 chart = alt.Chart(subset).mark_bar().encode(
     x=alt.X("Age", sort=ages),
     y=alt.Y("Rate", title="Mortality rate per 100k"),
@@ -124,3 +161,5 @@ if len(countries_in_subset) != len(countries):
     else:
         missing = set(countries) - set(countries_in_subset)
         st.write("No data available for " + ", ".join(missing) + ".")
+
+
