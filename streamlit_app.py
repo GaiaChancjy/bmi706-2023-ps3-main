@@ -78,7 +78,7 @@ countries = st.multiselect(
     "Select countries to compare",
     options=all_countries,
     default=[
-        "Austria",
+ #       "Austria",
         "Germany",
         "Iceland",
         "Spain",
