@@ -27,7 +27,7 @@ df["Rate"] = df["Deaths"] / df["Pop"] * 100_000
 # }}
 
 
-@st.cache
+@st.cache_data
 def load_data():
     cancer_df = pd.read_csv("https://raw.githubusercontent.com/hms-dbmi/bmi706-2022/main/cancer_data/cancer_ICD10.csv").melt(  # type: ignore
         id_vars=["Country", "Year", "Cancer", "Sex"],
@@ -39,7 +39,7 @@ def load_data():
         value_name="Pop",)
     
     df = pd.merge(left=cancer_df, right=pop_df, how="left")
-    df["Pop"] = df.groupby(["Country", "Sex", "Age"])["Pop"].fillna(method="bfill")
+    df["Pop"] = df.groupby(["Country", "Sex", "Age"])["Pop"].obj.bfill()
     df.dropna(inplace=True)
 
     df = df.groupby(["Country", "Year", "Cancer", "Age", "Sex"]).sum().reset_index()
@@ -78,7 +78,7 @@ countries = st.multiselect(
     "Select countries to compare",
     options=all_countries,
     default=[
- #       "Austria",
+        "Austria",
         "Germany",
         "Iceland",
         "Spain",
@@ -89,6 +89,13 @@ countries = st.multiselect(
 )
 
 subset = subset[subset["Country"].isin(countries)]
+
+
+if not subset.empty:
+    # Proceed with the filtered subset
+    subset = subset
+else:
+    st.warning("No data available for the selected countries.")
 
 ### P2.3 ###
 
@@ -113,6 +120,16 @@ ages = [
     "Age >64",
 ]
 
+countries_in_subset = subset["Country"].unique()
+
+if len(countries_in_subset) != len(countries):
+    if len(countries_in_subset) == 0:
+        st.write("No data avaiable for given subset.")
+    else:
+        missing = set(countries) - set(countries_in_subset)
+        st.write("No data available for " + ", ".join(missing) + ".")
+
+
 # Heatmap for cancer mortality rates
 heatmap = alt.Chart(subset).mark_rect().encode(
     x=alt.X("Age", sort=ages),
@@ -122,12 +139,13 @@ heatmap = alt.Chart(subset).mark_rect().encode(
 ).properties(
     title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}"
 )
+
 st.altair_chart(heatmap, use_container_width=True)
 
 
 # Bar chart for population
 bar_chart = alt.Chart(subset).mark_bar().encode(
-    x=alt.X("Pop", title="Population"),
+    x=alt.X("Pop", title="Sum of population size"),
     y=alt.Y("Country", sort='-x'),
     tooltip=["Pop"]
 ).properties(
@@ -135,25 +153,6 @@ bar_chart = alt.Chart(subset).mark_bar().encode(
 )
 st.altair_chart(bar_chart, use_container_width=True)
 
-# the original sample chart
-chart = alt.Chart(subset).mark_bar().encode(
-    x=alt.X("Age", sort=ages),
-    y=alt.Y("Rate", title="Mortality rate per 100k"),
-    color="Country",
-    tooltip=["Rate"],
-).properties(
-    title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}",
-)
+
 ### P2.5 ###
-
-st.altair_chart(chart, use_container_width=True)
-
-countries_in_subset = subset["Country"].unique()
-if len(countries_in_subset) != len(countries):
-    if len(countries_in_subset) == 0:
-        st.write("No data avaiable for given subset.")
-    else:
-        missing = set(countries) - set(countries_in_subset)
-        st.write("No data available for " + ", ".join(missing) + ".")
-
 
